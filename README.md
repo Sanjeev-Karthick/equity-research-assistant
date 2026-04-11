@@ -14,7 +14,6 @@ A multi-agent assistant that performs comprehensive financial research and inves
 - **Multi-Agent Orchestration**: Supervisor pattern coordinates specialized agents
 - **Knowledge Base Integration**: Analyze SEC filings, earnings calls, and financial reports
 - **Real-Time Data**: Fetch live stock prices and market news
-- **Portfolio Optimization**: Mean-variance optimization for investment portfolios
 - **Guardrails**: Content filtering to prevent discussion of restricted topics
 - **Extensible**: Easy to add new agents or tools
 
