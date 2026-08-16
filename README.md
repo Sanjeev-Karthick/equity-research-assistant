@@ -66,30 +66,31 @@ Enable the following models in Amazon Bedrock:
 
 ## Usage
 
-### Running the Notebook
+### Run the API
 
-Navigate to the examples directory and run the Jupyter notebook:
+From the repository root:
 
 ```bash
-cd examples/multi_agent_collaboration/financial_research_agent
-jupyter notebook main.ipynb
+uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+The first request to `/research` creates (or reuses) the Bedrock supervisor and sub-agents. Subsequent requests call `financial_research_assistant.invoke(...)`.
+
+```bash
+curl -X POST http://localhost:8000/research \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is AAPL stock price doing over the last week and relate that to recent news?"}'
+```
+
+OpenAPI docs: http://localhost:8000/docs
 
 ### Example Queries
 
-```python
-# Analyze recent stock performance with news correlation
-request = "What's AAPL stock price doing over the last week and relate that to recent news"
-result = financial_research_assistant.invoke(request)
+- "What's AAPL stock price doing over the last week and relate that to recent news"
+- "Optimize my portfolio with AAPL, MSFT, and GOOGL"
+- "Analyze Amazon's financial health based on the 2024 10K report"
 
-# Portfolio optimization (requires at least 3 tickers)
-request = "Optimize my portfolio with AAPL, MSFT, and GOOGL"
-result = financial_research_assistant.invoke(request)
-
-# Analyze financial reports
-request = "Analyze Amazon's financial health based on the 2024 10K report"
-result = financial_research_assistant.invoke(request)
-```
+Set `FORCE_RECREATE_AGENTS=true` to delete and recreate agents on startup. Set `ENABLE_CRYPTO_GUARDRAIL=true` to attach the optional cryptocurrency guardrail.
 
 ## IAM Policy
 
@@ -157,18 +158,19 @@ financial-research-agent/
 ├── README.md                 # This file
 ├── LICENSE                   # Apache 2.0 License
 ├── requirements.txt          # Python dependencies
-├── src/
-│   ├── utils/
-│   │   ├── bedrock_agent.py       # Agent helper classes
-│   │   └── knowledge_base_helper.py  # KB utilities
-│   └── shared/
-│       ├── web_search/            # Tavily web search Lambda
-│       └── stock_data/            # Stock data Lambda
-└── examples/
-    └── multi_agent_collaboration/
-        └── financial_research_agent/
-            ├── README.md
-            └── main.ipynb         # Main demonstration notebook
+└── src/
+    ├── api/
+    │   ├── main.py                # FastAPI app
+    │   └── schemas.py             # Request/response models
+    ├── financial_research/
+    │   ├── assistant.py           # Agent setup + invoke
+    │   └── config.py              # Model, bucket, and Lambda ARNs
+    ├── utils/
+    │   ├── bedrock_agent.py       # Agent helper classes
+    │   └── knowledge_base_helper.py  # KB utilities
+    └── shared/
+        ├── web_search/            # Tavily web search Lambda
+        └── stock_data/            # Stock data Lambda
 ```
 
 
