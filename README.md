@@ -9,13 +9,20 @@ A multi-agent assistant that performs comprehensive financial research and inves
 
 ![AWS Architecture](architecture.png)
 
+## Documentation
+
+- **[Features](docs/FEATURES.md)** — supervisor pattern, agents, tools, configuration, and limits
+- **[API](docs/API.md)** — endpoints, request/response fields, curl/Python examples, environment variables
+- Interactive OpenAPI: `/docs` (Swagger) and `/redoc` after the server is running
+
 ## Features
 
-- **Multi-Agent Orchestration**: Supervisor pattern coordinates specialized agents
-- **Knowledge Base Integration**: Analyze SEC filings, earnings calls, and financial reports
-- **Real-Time Data**: Fetch live stock prices and market news
-- **Guardrails**: Content filtering to prevent discussion of restricted topics
-- **Extensible**: Easy to add new agents or tools
+- **HTTP API**: FastAPI service (`POST /research`) instead of a notebook
+- **Multi-agent orchestration**: Supervisor coordinates news, quantitative, and summarizer agents
+- **Knowledge base**: Analyze SEC filings, earnings calls, and financial reports
+- **Market tools**: Live-ish stock history and optional portfolio optimization via Lambda
+- **Optional guardrails**: Cryptocurrency topic filter when enabled
+- **Session continuity**: Reuse `session_id` for follow-up questions
 
 ## Prerequisites
 
@@ -66,30 +73,24 @@ Enable the following models in Amazon Bedrock:
 
 ## Usage
 
-### Running the Notebook
-
-Navigate to the examples directory and run the Jupyter notebook:
+From the repository root:
 
 ```bash
-cd examples/multi_agent_collaboration/financial_research_agent
-jupyter notebook main.ipynb
+uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Example Queries
+The first `POST /research` creates or reuses Bedrock agents. Full contract: [docs/API.md](docs/API.md).
 
-```python
-# Analyze recent stock performance with news correlation
-request = "What's AAPL stock price doing over the last week and relate that to recent news"
-result = financial_research_assistant.invoke(request)
-
-# Portfolio optimization (requires at least 3 tickers)
-request = "Optimize my portfolio with AAPL, MSFT, and GOOGL"
-result = financial_research_assistant.invoke(request)
-
-# Analyze financial reports
-request = "Analyze Amazon's financial health based on the 2024 10K report"
-result = financial_research_assistant.invoke(request)
+```bash
+curl -s http://localhost:8000/health
+curl -s -X POST http://localhost:8000/research \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is AAPL stock price doing over the last week and relate that to recent news?"}'
 ```
+
+OpenAPI: http://localhost:8000/docs · ReDoc: http://localhost:8000/redoc
+
+Set `FORCE_RECREATE_AGENTS=true` to delete and recreate agents on first use. Set `ENABLE_CRYPTO_GUARDRAIL=true` to attach the cryptocurrency guardrail.
 
 ## IAM Policy
 
@@ -157,18 +158,22 @@ financial-research-agent/
 ├── README.md                 # This file
 ├── LICENSE                   # Apache 2.0 License
 ├── requirements.txt          # Python dependencies
-├── src/
-│   ├── utils/
-│   │   ├── bedrock_agent.py       # Agent helper classes
-│   │   └── knowledge_base_helper.py  # KB utilities
-│   └── shared/
-│       ├── web_search/            # Tavily web search Lambda
-│       └── stock_data/            # Stock data Lambda
-└── examples/
-    └── multi_agent_collaboration/
-        └── financial_research_agent/
-            ├── README.md
-            └── main.ipynb         # Main demonstration notebook
+├── docs/
+│   ├── API.md                     # HTTP contract
+│   └── FEATURES.md                # Product and agent behavior
+└── src/
+    ├── api/
+    │   ├── main.py                # FastAPI app
+    │   └── schemas.py             # Request/response models
+    ├── financial_research/
+    │   ├── assistant.py           # Agent setup + invoke
+    │   └── config.py              # Model, bucket, and Lambda ARNs
+    ├── utils/
+    │   ├── bedrock_agent.py       # Agent helper classes
+    │   └── knowledge_base_helper.py  # KB utilities
+    └── shared/
+        ├── web_search/            # Tavily web search Lambda
+        └── stock_data/            # Stock data Lambda
 ```
 
 

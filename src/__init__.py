@@ -1,2 +1,2 @@
 # Financial Research Agent - Source Package
-# This module contains utilities for working with Amazon Bedrock Agents
+# Utilities, Lambda tools, the research assistant, and the FastAPI app.
